@@ -91,8 +91,8 @@ def initAdmin():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    hashed_pass = bcrypt.generate_password_hash(password)
-    new_admin = User(email, hashed_pass)
+    pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_admin = User(email, pw_hash)
     db.session.add(new_admin)
     db.session.commit()
 
