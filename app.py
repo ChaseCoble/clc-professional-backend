@@ -121,6 +121,11 @@ def verification():
     check = db.session.query(User)
     return jsonify(f"Authenticated {check}")
 
+@app.route('/auth/get')
+def get_auth():
+    auth = db.session.query(User).all()
+    return jsonify(user_schema.dump(auth))
+
 @app.route('/portfolio/get', methods=["GET"])
 def get_portfolio_items():
     portfolioItems = db.session.query(PortfolioItem).all()
