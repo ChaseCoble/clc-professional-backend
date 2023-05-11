@@ -238,7 +238,7 @@ def add_blog_item():
     title = data.get('title')
     date = data.get('date')
     content = data.get('content')
-    flavorImgURL = data.get('flavorImg')
+    flavorImgURL = data.get('flavorImgURL')
     refURL = data.get('refURL')
 
     new_blog_item = BlogItem(title, date, content, flavorImgURL, refURL)
@@ -261,7 +261,7 @@ def add_many_blogItems():
         title = blogItem.get('title')
         date = blogItem.get('date')
         content = blogItem.get('content')
-        flavorImgURL = blogItem.get('flavorImg')
+        flavorImgURL = blogItem.get('flavorImgURL')
         refURL = blogItem.get('refURL')
 
         existing_blogItem_check = db.session.query(PortfolioItem).filter(PortfolioItem.title == title).first()
