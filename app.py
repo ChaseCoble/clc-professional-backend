@@ -90,9 +90,9 @@ def initAdmin():
 
     data = request.get_json()
     email = data.get('email')
-    passtohash = data.get('password')
-    password = bcrypt.generate_password_hash(passtohash)
-    new_admin = User(email, password)
+    password = data.get('password')
+    hashed_pass = bcrypt.generate_password_hash(password)
+    new_admin = User(email, hashed_pass)
     db.session.add(new_admin)
     db.session.commit()
 
@@ -118,8 +118,7 @@ def verification():
     if not bcrypt.check_password_hash(user.password, password):
         return jsonify("User could not be Verified")
     
-    check = db.session.query(User)
-    return jsonify(f"Authenticated {check}")
+    return jsonify(f"Authenticated")
 
 @app.route('/auth/get')
 def get_auth():
