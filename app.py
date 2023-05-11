@@ -149,7 +149,9 @@ def add_portfolio_item():
 
     return jsonify(portfolio_schema.dump(new_portfolio_item))
 
+# This is a comment
 @app.route('/portfolio/add/many', methods=["POST"])
+
 def add_many_portfolioItems():
     if request.content_type != "application/json":
         return jsonify("Error: Your data must be sent as JSON")
