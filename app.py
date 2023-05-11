@@ -118,12 +118,7 @@ def verification():
     if not bcrypt.check_password_hash(user.password, password):
         return jsonify("User could not be Verified")
     
-    return jsonify(f"Authenticated")
-
-@app.route('/auth/get')
-def get_auth():
-    auth = db.session.query(User).all()
-    return jsonify(user_schema.dump(auth))
+    return jsonify("Authenticated")
 
 @app.route('/portfolio/get', methods=["GET"])
 def get_portfolio_items():
