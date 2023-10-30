@@ -41,8 +41,10 @@ class PortfolioItem(db.Model):
     imgURL = db.Column(db.String)
     description = db.Column(db.String)
     date = db.Column(db.String)
+    language = db.Column(db.String)
+    languagedetail = db.Column(db.String)
 
-    def __init__(self, title, category, projectURL, repoURL, imgURL, description, date):
+    def __init__(self, title, category, projectURL, repoURL, imgURL, description, date, language, languagedetail):
         self.title = title
         self.category = category
         self.projectURL = projectURL
@@ -50,11 +52,13 @@ class PortfolioItem(db.Model):
         self.imgURL = imgURL
         self.description = description
         self.date = date
+        self.language = language
+        self.languagedetail = languagedetail
 
 
 class PortfolioSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'title', 'category', 'projectURL', 'repoURL', 'imgURL', 'description', 'date', 'perPage')
+        fields = ('id', 'title', 'category', 'projectURL', 'repoURL', 'imgURL', 'description', 'date', 'perPage', 'language', 'languagedetail')
 
 portfolio_schema = PortfolioSchema()
 all_portfolio_schema = PortfolioSchema(many=True)
@@ -238,7 +242,7 @@ def add_blog_item():
     title = data.get('title')
     date = data.get('date')
     content = data.get('content')
-    flavorImgURL = data.get('flavorImgURL')
+    flavorImgURL = data.get('flavorImg')
     refURL = data.get('refURL')
 
     new_blog_item = BlogItem(title, date, content, flavorImgURL, refURL)
@@ -261,7 +265,7 @@ def add_many_blogItems():
         title = blogItem.get('title')
         date = blogItem.get('date')
         content = blogItem.get('content')
-        flavorImgURL = blogItem.get('flavorImgURL')
+        flavorImgURL = blogItem.get('flavorImg')
         refURL = blogItem.get('refURL')
 
         existing_blogItem_check = db.session.query(PortfolioItem).filter(PortfolioItem.title == title).first()
