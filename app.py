@@ -58,7 +58,7 @@ class PortfolioItem(db.Model):
 
 class PortfolioSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'title', 'category', 'projectURL', 'repoURL', 'imgURL', 'description', 'date', 'perPage')
+        fields = ('id', 'title', 'category', 'projectURL', 'repoURL', 'imgURL', 'description', 'date', 'perPage', 'language', 'languagedetail')
 
 portfolio_schema = PortfolioSchema()
 all_portfolio_schema = PortfolioSchema(many=True)
