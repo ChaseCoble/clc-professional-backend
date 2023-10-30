@@ -175,8 +175,8 @@ def add_many_portfolioItems():
         imgURL = portfolioItem.get('imgURL')
         description = portfolioItem.get('description')
         date = portfolioItem.get('date')
-        language = data.get('language')
-        languagedetail = data.get('languagedetail')
+        language = portfolioItem.get('language')
+        languagedetail = portfolioItem.get('languagedetail')
 
         existing_portfolioItem_check = db.session.query(PortfolioItem).filter(PortfolioItem.title == title).first()
         if existing_portfolioItem_check is None:
