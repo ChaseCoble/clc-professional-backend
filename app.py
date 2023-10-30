@@ -147,8 +147,10 @@ def add_portfolio_item():
     imgURL = data.get('imgURL')
     description = data.get('description')
     date = data.get('date')
+    language = data.get('language')
+    languagedetail = data.get('languagedetail')
 
-    new_portfolio_item = PortfolioItem(title, category, projectURL, repoURL, imgURL, description, date)
+    new_portfolio_item = PortfolioItem(title, category, projectURL, repoURL, imgURL, description, date, language, languagedetail)
     db.session.add(new_portfolio_item)
     db.session.commit()
 
@@ -173,10 +175,12 @@ def add_many_portfolioItems():
         imgURL = portfolioItem.get('imgURL')
         description = portfolioItem.get('description')
         date = portfolioItem.get('date')
+        language = data.get('language')
+        languagedetail = data.get('languagedetail')
 
         existing_portfolioItem_check = db.session.query(PortfolioItem).filter(PortfolioItem.title == title).first()
         if existing_portfolioItem_check is None:
-            new_record = PortfolioItem(title, category, projectURL, repoURL, imgURL, description, date)
+            new_record = PortfolioItem(title, category, projectURL, repoURL, imgURL, description, date, language, languagedetail)
             db.session.add(new_record)
             db.session.commit()
             new_portfolioItems.append(portfolio_schema.dump(new_record))
@@ -195,6 +199,8 @@ def update_portfolio_item(id):
     imgURL = data.get('imgURL')
     description = data.get('description')
     date = data.get('date')
+    language = data.get('language')
+    languagedetail = data.get('languagedetail')
 
     portfolio_item_to_update = db.session.query(PortfolioItem).filter(PortfolioItem.id == id).first()
 
@@ -210,6 +216,10 @@ def update_portfolio_item(id):
         portfolio_item_to_update.description = description
     if date != None:
         portfolio_item_to_update.date = date
+    if language != None:
+        portfolio_item_to_update.language = language
+    if languagedetail != None:
+        portfolio_item_to_update.languagedetail = languagedetail    
 
     db.session.commit()
 
