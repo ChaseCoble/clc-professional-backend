@@ -1,27 +1,140 @@
 from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
 from flask_cors import CORS
-from imports import db, ma, bcrypt
+from flask_bcrypt import Bcrypt
+
 import os
 
 app = Flask(__name__)
-init_Posted = False
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, 'app.sqlite')
 # app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://wwiwrddrdlsunr:ba77b924a207da45ea99849dd3096ffbe4805dfd8c1f5fa41993d933fec780ae@ec2-54-234-13-16.compute-1.amazonaws.com:5432/d83nvvhb3an956"
 
-db.init_app(app)
-ma.init_app(app)
-bcrypt.init_app(app)
+db = SQLAlchemy(app)
+ma = Marshmallow(app)
+bcrypt = Bcrypt(app)
 CORS(app)
 
 
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    email = db.Column(db.String, nullable = False, unique = True)
+    password = db.Column(db.String, nullable=False)
 
-@app.route('/portfolio', methods=["GET"])
+    def __init__(self, email, password):
+        self.email = email
+        self.password = password
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ("id", "email", "password")
+
+user_schema = UserSchema()
+
+class PortfolioItem(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    title = db.Column(db.String, nullable = False, unique = True)
+    category = db.Column(db.String, nullable = False)
+    projectURL = db.Column(db.String)
+    repoURL = db.Column(db.String)
+    imgURL = db.Column(db.String)
+    description = db.Column(db.String)
+    date = db.Column(db.String)
+    language = db.Column(db.String)
+    languagedetail = db.Column(db.String)
+
+    def __init__(self, title, category, projectURL, repoURL, imgURL, description, date, language, languagedetail):
+        self.title = title
+        self.category = category
+        self.projectURL = projectURL
+        self.repoURL = repoURL
+        self.imgURL = imgURL
+        self.description = description
+        self.date = date
+        self.language = language
+        self.languagedetail = languagedetail
+
+
+class PortfolioSchema(ma.Schema):
+    class Meta:
+        fields = ('id', 'title', 'category', 'projectURL', 'repoURL', 'imgURL', 'description', 'date', 'perPage')
+
+portfolio_schema = PortfolioSchema()
+all_portfolio_schema = PortfolioSchema(many=True)
+
+class BlogItem(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    title = db.Column(db.String, nullable = False, unique = True)
+    date = db.Column(db.String)
+    content = db.Column(db.String)
+    flavorImgURL = db.Column(db.String)
+    refURL = db.Column(db.String)
+
+    def __init__(self, title, date, content, flavorImgURL, refURL):
+        self.title = title
+        self.date = date
+        self.content = content
+        self.flavorImgURL = flavorImgURL
+        self.refURL = refURL
+
+class BlogSchema(ma.Schema):
+    class Meta:
+        fields = ('id', 'title', 'date', 'content', 'flavorImgURL', 'refURL')
+
+blog_schema = BlogSchema()
+all_blog_schema = BlogSchema(many=True)
+
+
+
+@app.route('/sZLdScPBTu', methods = ["POST"])
+def initAdmin():
+    if request.content_type != 'application/json':
+        return jsonify('Error: Data must be sent as JSON')
+
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_admin = User(email, pw_hash)
+    db.session.add(new_admin)
+    db.session.commit()
+
+    return jsonify(user_schema.dump(new_admin))
+    
+@app.route('/auth', methods=["POST"])
+def verification():
+    if request.content_type != "application/json":
+        return jsonify("Error improper validation content type")
+    
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    user = db.session.query(User).filter(User.email == email).first()
+
+    if user is None:
+        return jsonify("User could not be Verified")
+    
+    if user.email != "coblexdevelopment@gmail.com":
+        return jsonify("User not authorized")
+    
+    if not bcrypt.check_password_hash(user.password, password):
+        return jsonify("User could not be Verified")
+    
+    return jsonify("Authenticated")
+
+@app.route('/portfolio/get', methods=["GET"])
 def get_portfolio_items():
     portfolioItems = db.session.query(PortfolioItem).all()
     return jsonify(all_portfolio_schema.dump(portfolioItems))
+    
+@app.route('/portfolio/get/<id>', methods=["GET"])
+def get_portfolio_item(id):
+    portfolioItem = db.session.query(PortfolioItem).filter_by(id=id).first()
+    return jsonify(portfolio_schema.dump(portfolioItem))
 
-@app.route("/portfolio", methods=["POST"])
+@app.route("/portfolio/add", methods=["POST"])
 def add_portfolio_item():
     if request.content_type != 'application/json':
         return jsonify('Error: Data must be sent as JSON')
@@ -34,14 +147,14 @@ def add_portfolio_item():
     imgURL = data.get('imgURL')
     description = data.get('description')
     date = data.get('date')
-  
+
     new_portfolio_item = PortfolioItem(title, category, projectURL, repoURL, imgURL, description, date)
     db.session.add(new_portfolio_item)
     db.session.commit()
 
     return jsonify(portfolio_schema.dump(new_portfolio_item))
-    
-@app.route('/portfolio/batch', methods=["POST"])
+
+@app.route('/portfolio/add/many', methods=["POST"])
 
 def add_many_portfolioItems():
     if request.content_type != "application/json":
@@ -70,12 +183,7 @@ def add_many_portfolioItems():
 
     return jsonify(all_portfolio_schema.dump(new_portfolioItems))
 
-@app.route('/portfolio/<id>', methods=["GET"])
-def get_portfolio_item(id):
-    portfolioItem = db.session.query(PortfolioItem).filter_by(id=id).first()
-    return jsonify(portfolio_schema.dump(portfolioItem))
-
-@app.route('/portfolio/<id>', methods=["PUT"])
+@app.route('/portfolio/update/<id>', methods=["PUT"])
 def update_portfolio_item(id):
     if request.content_type != 'application/json':
         return jsonify('Error: Data must be sent as JSON')
@@ -107,7 +215,7 @@ def update_portfolio_item(id):
 
     return jsonify(portfolio_schema.dump(portfolio_item_to_update))
 
-@app.route('/portfolio/<id>', methods=["DELETE"])
+@app.route('/portfolio/delete/<id>', methods=["DELETE"])
 def delete_portfolio_item(id):
     delete_portfolio_item = db.session.query(PortfolioItem).filter(PortfolioItem.id == id).first()
     db.session.delete(delete_portfolio_item)
@@ -116,12 +224,16 @@ def delete_portfolio_item(id):
 
     return jsonify(f"{delete_portfolio_item.title} has been deleted!")
 
-@app.route('/blog', methods = ["GET"])
+@app.route('/blog/get', methods = ["GET"])
 def get_all_blog_items():
     blogItems = db.session.query(BlogItem).all()
     return jsonify(all_blog_schema.dump(blogItems))
 
-@app.route('/blog', methods = ["POST"])
+@app.route('/blog/get/<id>', methods = ["GET"])
+def get_blog_item(id):
+    blogItem = db.session.query(BlogItem).filter(BlogItem.id == id).first()
+    return jsonify(blog_schema.dump(blogItem))
+@app.route('/blog/add', methods = ["POST"])
 def add_blog_item():
     if not request.is_json:
         return jsonify("Request body is not JSON")
@@ -130,7 +242,7 @@ def add_blog_item():
     title = data.get('title')
     date = data.get('date')
     content = data.get('content')
-    flavorImgURL = data.get('flavorImgURL')
+    flavorImgURL = data.get('flavorImg')
     refURL = data.get('refURL')
 
     new_blog_item = BlogItem(title, date, content, flavorImgURL, refURL)
@@ -139,7 +251,7 @@ def add_blog_item():
 
     return jsonify(blog_schema.dump(new_blog_item))
 
-@app.route('/blog/batch', methods=["POST"])
+@app.route('/blog/add/many', methods=["POST"])
 def add_many_blogItems():
     if request.content_type != "application/json":
         return jsonify("Error: Your data must be sent as JSON")
@@ -153,7 +265,7 @@ def add_many_blogItems():
         title = blogItem.get('title')
         date = blogItem.get('date')
         content = blogItem.get('content')
-        flavorImgURL = blogItem.get('flavorImgURL')
+        flavorImgURL = blogItem.get('flavorImg')
         refURL = blogItem.get('refURL')
 
         existing_blogItem_check = db.session.query(PortfolioItem).filter(PortfolioItem.title == title).first()
@@ -165,15 +277,7 @@ def add_many_blogItems():
 
     return jsonify(all_portfolio_schema.dump(new_blogItems))
 
-@app.route('/blog/<id>', methods = ["GET"])
-def get_blog_item(id):
-    blogItem = db.session.query(BlogItem).filter(BlogItem.id == id).first()
-    return jsonify(blog_schema.dump(blogItem))
-
-
-
-
-@app.route('/blog/<id>', methods = ["PUT"])
+@app.route('/blog/update/<id>', methods = ["PUT"])
 def update_blog_item(id):
     if request.content_type != 'application/json':
         return jsonify('Error: Data must be sent as JSON')
@@ -202,195 +306,13 @@ def update_blog_item(id):
 
     return jsonify(blog_schema.dump(blog_item_to_update))
 
-@app.route('/blog/<id>', methods=["DELETE"])
+@app.route('/blog/delete/<id>', methods=["DELETE"])
 def delete_blog_item(id):
     delete_blog_item = db.session.query(BlogItem).filter(BlogItem.id == id).first()
     db.session.delete(delete_blog_item) 
     db.session.commit()
     return jsonify(f"{delete_blog_item} has been deleted")
 
-@app.route('/ed', methods = ["GET"])
-def get_ed_items():
-    edItems = db.session.query().all()
-    return jsonify(all_education_schema.dump(edItems))
-
-@app.route('/ed', methods = ["POST"])
-def add_ed_item():
-    if not request.is_json:
-        return jsonify("Request body is not JSON")
-    
-    data = request.get_json()
-    title = data.get('title')
-    merit = data.get('merit')
-    start_date = data.get('start_date')
-    end_date = data.get('end_date')
-    details = data.get('details')
-
-    new_ed_item = EducationItem(title, merit, start_date, end_date, details)
-    db.session.add(new_ed_item)
-    db.session.commit()
-
-@app.route('/ed/batch', methods=["POST"])
-def add_many_edItems():
-    if request.content_type != "application/json":
-        return jsonify("Error: Your data must be sent as JSON")
-    
-    data = request.get_json()
-    edItems = data.get('edItems')
-
-    new_edItems = []
-
-    for edItem in edItems:
-        title = edItem.get('title')
-        merit = edItem.get('merit')
-        start_date = edItem.get('start_date')
-        end_date = edItem.get('end_date')
-        details = edItem.get('details')
-        new_record = edItem(title, merit, start_date, end_date, details)
-        db.session.add(new_record)
-        db.session.commit()
-        new_edItems.append(all_education_schema.dump(new_record))
-
-    return jsonify(all_education_schema.dump(new_edItems))
-
-@app.route('/ed/<id>', methods=["GET"])
-def get_ed_item(id):
-    edItem = db.session.query(EducationItem).filter(EducationItem.id == id).first()
-    return jsonify(education_schema.dump(edItem))
-
-@app.route('/ed/<id>', methods = ["PUT"])
-def update_ed_item(id):
-    if request.content_type != 'application/json':
-        return jsonify('Error: Data must be sent as JSON')
-    
-    data = request.get_json()
-    title = data.get('title')
-    merit = data.get('merit')
-    start_date = data.get('start_date')
-    end_date = data.get('end_date')
-    details = data.get('details')
-
-    ed_item_to_update = db.session.query(EducationItem).filter(EducationItem.id == id).first()
-
-    if title != None:
-        ed_item_to_update.title = title
-    if merit != None:
-        ed_item_to_update.merit = merit
-    if start_date != None:
-        ed_item_to_update.start_date = start_date
-    if end_date != None:
-        ed_item_to_update.end_date = end_date
-    if details != None:
-        ed_item_to_update.details = details
-
-    db.session.commit()
-
-    return jsonify(education_schema.dump(ed_item_to_update))
-
-@app.route('/ed/<id>', methods = ["DELETE"])
-def delete_ed_item(id):
-    delete_ed_item = db.session.query(EducationItem).filter(EducationItem.id == id).first()
-    db.session.delete(delete_ed_item) 
-    db.session.commit()
-    return jsonify(f"{delete_ed_item} has been deleted")
-
-@app.route('/career', methods = ['GET'])
-def get_all_career_items():
-    careerItems = db.session.query(CareerItem).all()
-    return jsonify(all_career_schema.dump(careerItems))  
-
-@app.route('/career', methods = ["POST"])
-def add_career_item():
-    if not request.is_json:
-        return jsonify("Request body is not JSON")
-    
-    data = request.get_json()
-    employer = data.get('employer')
-    start_date = data.get('start_date')
-    end_date = data.get('end_date')
-    start_job_title = data.get('start_job_title')
-    end_job_title = data.get('end_job_title')
-    details = data.get('details')
-
-    new_career_item = CareerItem(employer, start_job_title, end_job_title, start_date, end_date, details)
-    db.session.add(new_career_item)
-    db.session.commit()
-
-@app.route('/career/batch', methods=["POST"])
-def add_many_careerItems():
-    if request.content_type != "application/json":
-        return jsonify("Error: Your data must be sent as JSON")
-    
-    data = request.get_json()
-    careerItems = data.get('careerItems')
-
-    new_careerItems = []
-
-    for careerItem in careerItems:
-        employer = careerItem.get('employer')
-        start_date = careerItem.get('start_date')
-        end_date = careerItem.get('end_date')
-        start_job_title = careerItem.get('start_job_title')
-        end_job_title = careerItem.get('end_job_title')
-        details = careerItem.get('details')
-        new_record = careerItem(employer, start_date, end_date, start_job_title, end_job_title, details)
-        db.session.add(new_record)
-        db.session.commit()
-        new_careerItems.append(all_career_schema.dump(new_record))
-
-    return jsonify(all_career_schema.dump(new_careerItems))
-
-@app.route('/career/<id>', methods=["GET"])
-def get_career_item(id):
-    careerItem = db.session.query(CareerItem).filter(CareerItem.id == id).first()
-    return jsonify(career_schema.dump(careerItem))
-
-@app.route('/career/<id>', methods = ["PUT"])
-def update_career_item(id):
-    if request.content_type != 'application/json':
-        return jsonify('Error: Data must be sent as JSON')
-    
-    data = request.get_json()
-    employer = data.get('employer')
-    start_date = data.get('start_date')
-    end_date = data.get('end_date')
-    start_job_title = data.get('start_job_title')
-    end_job_title = data.get('end_job_title')
-    details = data.get('details')
-
-    career_item_to_update = db.session.query(CareerItem).filter(CareerItem.id == id).first()
-
-
-    if employer != None:
-        career_item_to_update.employer = employer
-    if start_date != None:
-        career_item_to_update.start_date = start_date
-    if end_date != None:
-        career_item_to_update.end_date = end_date
-    if start_job_title != None:
-        career_item_to_update.start_job_title = start_job_title
-    if end_job_title != None:
-        career_item_to_update.end_job_title = end_job_title
-    if details != None:
-        career_item_to_update.details = details
-
-    db.session.commit()
-
-    return jsonify(education_schema.dump(career_item_to_update))
-
-@app.route('/career/<id>', methods = ["DELETE"])
-def delete_career_item(id):
-    delete_career_item = db.session.query(CareerItem).filter(CareerItem.id == id).first()
-    db.session.delete(delete_career_item) 
-    db.session.commit()
-    return jsonify(f"{delete_career_item} has been deleted")
-
-
-
-@app.route('/updateables', methods = ["GET"])
-def get_updateables():
-    updateItems = db.session.query(GeneralUpdate).all()
-    return jsonify(all_generalupdate_schema.dump(updateItems))
 
 if __name__ == "__main__":
     app.run(debug=True)
