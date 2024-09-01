@@ -80,8 +80,8 @@ def get_portfolio_item(id):
 def add_portfolio_item():
     if request.content_type != 'application/json':
         return jsonify('Error: Data must be sent as JSON')
-
     data = request.get_json()
+    print(data)
     title = data.get('title')
     category = data.get('category')
     projectURL = data.get('projectURL')
@@ -94,20 +94,20 @@ def add_portfolio_item():
     languagedetail = data.get('languagedetail')
 
     new_portfolio_item = PortfolioItem(title, category, projectURL, repoURL, imgURL, iframe, description, date, language, languagedetail)
+    print(new_portfolio_item)
     db.session.add(new_portfolio_item)
     db.session.commit()
 
     return jsonify(portfolio_schema.dump(new_portfolio_item))
 
 @app.route('/portfolio/add/many', methods=["POST"])
-
 def add_many_portfolioItems():
     if request.content_type != "application/json":
         return jsonify("Error: Your data must be sent as JSON")
     
     data = request.get_json()
     portfolioItems = data.get('portfolioItems')
-
+    print(portfolioItems)
     new_portfolioItems = []
 
     for portfolioItem in portfolioItems:
@@ -125,6 +125,7 @@ def add_many_portfolioItems():
         existing_portfolioItem_check = db.session.query(PortfolioItem).filter(PortfolioItem.title == title).first()
         if existing_portfolioItem_check is None:
             new_record = PortfolioItem(title, category, projectURL, repoURL, imgURL, iframe, description, date, language, languagedetail)
+            print(new_record)
             db.session.add(new_record)
             db.session.commit()
             new_portfolioItems.append(portfolio_schema.dump(new_record))
