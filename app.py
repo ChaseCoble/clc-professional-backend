@@ -93,6 +93,10 @@ def add_portfolio_item():
     language = data.get('language')
     languagedetail = data.get('languagedetail')
 
+    testing_array = ["True", "true", "False", "false"]
+    if iframe in testing_array and type(iframe) != bool:
+        iframe = bool(iframe.capitalize())
+
     new_portfolio_item = PortfolioItem(title, category, projectURL, repoURL, imgURL, iframe, description, date, language, languagedetail)
     print(new_portfolio_item)
     db.session.add(new_portfolio_item)
