@@ -46,7 +46,7 @@ class PortfolioItem(db.Model):
     language = db.Column(db.String)
     languagedetail = db.Column(db.String)
 
-    def __init__(self, title, category, projectURL, repoURL, iframe, imgURL, description, date, language, languagedetail):
+    def __init__(self, title, category, projectURL, repoURL, imgURL, iframe, description, date, language, languagedetail):
         self.title = title
         self.category = category
         self.projectURL = projectURL
@@ -93,9 +93,6 @@ def add_portfolio_item():
     language = data.get('language')
     languagedetail = data.get('languagedetail')
 
-    testing_array = ["True", "true", "False", "false"]
-    if iframe in testing_array and type(iframe) != bool:
-        iframe = bool(iframe.capitalize())
 
     new_portfolio_item = PortfolioItem(title, category, projectURL, repoURL, imgURL, iframe, description, date, language, languagedetail)
     print(new_portfolio_item)
